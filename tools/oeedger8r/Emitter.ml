@@ -271,7 +271,7 @@ let emit_function_ids (os:out_channel) (ec: enclave_content) =
   List.iteri (fun idx f ->
     fprintf os "    %s = %d,\n" (get_function_id f.Ast.tf_fdecl) idx
   ) ec.tfunc_decls;
-  fprintf os "    trusted_call_id_max = OE_ENUM_MAX\n";
+  fprintf os "    fcn_id_trusted_call_id_max = OE_ENUM_MAX\n";
   fprintf os "};\n\n";
   fprintf os "\n/* untrusted function ids */\n";
   fprintf os "enum {\n";
@@ -497,13 +497,14 @@ let oe_gen_ecall_functions (os:out_channel) (ec: enclave_content)  =
 
 let oe_gen_ecall_table (os:out_channel) (ec: enclave_content)  =
   fprintf os "\n\n/****** ECALL function table  *************/\n";
+  fprintf os "typedef void (*oe_enclave_func_t)(void*);\n\n";
   fprintf os "oe_enclave_func_t _oe_ecall_function_table[] = {\n";
   List.iter 
     (fun f -> fprintf os "    (oe_enclave_func_t) ecall_%s,\n" f.Ast.tf_fdecl.fname)
     ec.tfunc_decls;
-  fprintf os "};\n";
+  fprintf os "};\n\n";
   fprintf os "extern oe_enclave_func_t* _enclave_function_table;\n";  
-  fprintf os "extern size_t _enclave_function_table_size;\n";
+  fprintf os "extern size_t _enclave_function_table_size;\n\n";
   fprintf os "__attribute__((constructor)) void __oe_init_ecall_table()\n";
   fprintf os "{\n";
   fprintf os "    _enclave_function_table = _oe_ecall_function_table;\n";
@@ -536,7 +537,7 @@ let oe_get_host_ecall_function (os:out_channel) (fd:Ast.func_decl) =
   fprintf os "    memset(&__args, 0, sizeof(__args));\n";
   gen_fill_marshal_struct os fd "__args";
   fprintf os "    /* Call enclave function */\n";
-  fprintf os "    if(oe_call_enclave(enclave, \"ecall_%s\", &__args) != OE_OK || (__result=__args._result) != OE_OK)\n" fd.Ast.fname;
+  fprintf os "    if(oe_call_enclave_function(enclave,%s, &__args, sizeof(__args), NULL, 0) != OE_OK || (__result=__args._result) != OE_OK)\n" (get_function_id fd);
   fprintf os "        goto done;\n\n";
   fprintf os "    /* successful ecall. */\n";
   if fd.Ast.rtype <> Ast.Void then 
@@ -727,7 +728,8 @@ let gen_t_c (ec: enclave_content) (ep: edger8r_params) =
   fprintf os "OE_EXTERNC_BEGIN\n\n";
   if ec.tfunc_decls <> [] then (
     oe_gen_arg_check_macro os;
-    oe_gen_ecall_functions os ec);
+    oe_gen_ecall_functions os ec;
+    oe_gen_ecall_table os ec);
   if ec.ufunc_decls <> [] then (
     oe_gen_ocall_macros os;
     fprintf os "\n/* ocall wrappers */\n\n";

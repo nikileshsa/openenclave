@@ -270,7 +270,7 @@ static oe_result_t _handle_call_enclave_function(uint64_t arg_in)
     if (f == NULL)
         OE_RAISE(OE_UNEXPECTED);
 
-    f(args_ptr);
+    f(args.input_buffer);
 
     // Should we do this?
     args_ptr->result = OE_OK;
