@@ -527,13 +527,20 @@ let gen_fill_marshal_struct (os:out_channel) (fd:Ast.func_decl)  (args:string) =
   ) fd.Ast.plist;
   fprintf os "\n"
 
+
+let gen_register_ocall_table_decl (os:out_channel) =
+  fprintf os "\n/* Register ocall table with the enclave */\n";
+  fprintf os "void _register_ocall_table(oe_enclave_t* enclave);\n\n"
+
 let oe_get_host_ecall_function (os:out_channel) (fd:Ast.func_decl) =
   fprintf os "%s" (oe_gen_wrapper_prototype fd true);
   fprintf os "\n";
   fprintf os "{\n";
   fprintf os "    oe_result_t __result = OE_FAILURE;\n\n";
   fprintf os "    /* Marshal arguments */ \n";
-  fprintf os "    %s_args_t __args; \n" fd.Ast.fname;
+  fprintf os "    %s_args_t __args; \n\n" fd.Ast.fname;
+  fprintf os "    /* Register ocall table with the enclave. */\n";
+  fprintf os "    _register_ocall_table(enclave);\n\n";
   fprintf os "    memset(&__args, 0, sizeof(__args));\n";
   gen_fill_marshal_struct os fd "__args";
   fprintf os "    /* Call enclave function */\n";
@@ -641,7 +648,24 @@ let oe_gen_ocall_enclave_wrapper (os:out_channel) (fd:Ast.func_decl) =
   fprintf os "    oe_host_free(__host_buffer);\n";
   fprintf os "    return __result;\n";
   fprintf os "}\n\n" 
-  
+
+(*
+ * Generate ocall function table and registration
+ *)  
+let oe_gen_ocall_table (os:out_channel) (ec:enclave_content) =
+  fprintf os "\n/*ocall function table*/\n";
+  fprintf os "\ntypedef void (*ocall_function_t)(void*);\n";
+  fprintf os "static ocall_function_t _ocall_function_table[]= {\n";
+  List.iter (fun fd ->
+    fprintf os "    (ocall_function_t) ocall_%s,\n" fd.Ast.uf_fdecl.fname
+  )  ec.ufunc_decls;
+  fprintf os "NULL};\n\n";
+  fprintf os "\n/*Register ocall function table with the enclave*/\n";
+  fprintf os "void _register_ocall_table(oe_enclave_t* enclave)\n";
+  fprintf os "{\n";
+  fprintf os "    (void) _ocall_function_table;\n";
+  fprintf os "}\n\n"
+
 (* Generate ocalls wrapper function *)
 let oe_gen_ocall_host_wrapper (os:out_channel) (fd:Ast.func_decl) =
   fprintf os "OE_OCALL void ocall_%s(%s_args_t* args)\n{\n" fd.Ast.fname fd.Ast.fname;
@@ -769,11 +793,13 @@ let gen_u_c (ec: enclave_content) (ep: edger8r_params) =
   fprintf os "\n";
   fprintf os "OE_EXTERNC_BEGIN\n\n";
   if ec.tfunc_decls <> [] then (
+    gen_register_ocall_table_decl os;
     fprintf os "/* Wrappers for ecalls */\n\n";
     List.iter (fun d -> oe_get_host_ecall_function os d.Ast.tf_fdecl; fprintf os "\n\n")  ec.tfunc_decls);
   if ec.ufunc_decls <> [] then (
     fprintf os "\n/* ocall functions */\n\n";
     List.iter (fun d -> oe_gen_ocall_host_wrapper os d.Ast.uf_fdecl)  ec.ufunc_decls);
+  oe_gen_ocall_table os ec;
   fprintf os "OE_EXTERNC_END\n";
   close_out os   
 
