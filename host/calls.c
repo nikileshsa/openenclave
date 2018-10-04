@@ -753,6 +753,63 @@ done:
 }
 
 /*
+**==============================================================================
+**
+** oe_call_enclave()
+**
+**     Call the named function in the enclave.
+**
+**==============================================================================
+*/
+
+oe_result_t oe_call_enclave_function(
+    oe_enclave_t* enclave,
+    uint32_t function_id,
+    void* input_buffer,
+    size_t input_buffer_size,
+    void* output_buffer,
+    size_t output_buffer_size)
+{
+    oe_result_t result = OE_UNEXPECTED;
+    oe_call_enclave_function_args_t args;
+
+    /* Reject invalid parameters */
+    if (!enclave)
+        OE_THROW(OE_INVALID_PARAMETER);
+
+    /* Initialize the call_enclave_args structure */
+    {
+        args.function_id = function_id;
+        args.input_buffer = input_buffer;
+        args.input_buffer_size = input_buffer_size;
+        args.output_buffer = output_buffer;
+        args.output_buffer_size = output_buffer_size;
+        args.result = OE_UNEXPECTED;
+    }
+
+    /* Perform the ECALL */
+    {
+        uint64_t arg_out = 0;
+
+        OE_TRY(
+            oe_ecall(
+                enclave,
+                OE_ECALL_CALL_ENCLAVE_FUNCTION,
+                (uint64_t)&args,
+                &arg_out));
+        OE_TRY(arg_out);
+    }
+
+    /* Check the result */
+    OE_TRY(args.result);
+
+    result = OE_OK;
+
+OE_CATCH:
+    return result;
+}
+
+/*
 ** These two functions are needed to notify the debugger. They should not be
 ** optimized out even though they don't do anything in here.
 */

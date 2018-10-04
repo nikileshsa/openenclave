@@ -246,6 +246,39 @@ done:
     return result;
 }
 
+oe_enclave_func_t* _enclave_function_table = NULL;
+size_t _enclave_function_table_size = 0;
+
+static oe_result_t _handle_call_enclave_function(uint64_t arg_in)
+{
+    oe_call_enclave_function_args_t args, *args_ptr;
+    oe_result_t result = OE_OK;
+    oe_enclave_func_t f = NULL;
+
+    if (!oe_is_outside_enclave((void*)arg_in, sizeof(oe_call_enclave_args_t)))
+    {
+        OE_RAISE(OE_INVALID_PARAMETER);
+    }
+    args_ptr = (oe_call_enclave_function_args_t*)arg_in;
+    args = *args_ptr;
+
+    if (args.function_id >= _enclave_function_table_size)
+        OE_RAISE(OE_NOT_FOUND);
+
+    f = _enclave_function_table[args.function_id];
+
+    if (f == NULL)
+        OE_RAISE(OE_UNEXPECTED);
+
+    f(args_ptr);
+
+    // Should we do this?
+    args_ptr->result = OE_OK;
+
+done:
+    return result;
+}
+
 /*
 **==============================================================================
 **
@@ -331,6 +364,11 @@ static void _handle_ecall(
         case OE_ECALL_CALL_ENCLAVE:
         {
             arg_out = _handle_call_enclave(arg_in);
+            break;
+        }
+        case OE_ECALL_CALL_ENCLAVE_FUNCTION:
+        {
+            arg_out = _handle_call_enclave_function(arg_in);
             break;
         }
         case OE_ECALL_DESTRUCTOR:

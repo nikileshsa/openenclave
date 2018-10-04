@@ -138,6 +138,21 @@ oe_result_t oe_call_enclave(
     void* args);
 
 /**
+ * Perform a high-level enclave function call (ECALL).
+ *
+ *
+ * @returns This function return **OE_OK** on success.
+ *
+ */
+oe_result_t oe_call_enclave_function(
+    oe_enclave_t* enclave,
+    uint32_t function_id,
+    void* input_buffer,
+    size_t input_buffer_size,
+    void* output_buffer,
+    size_t output_buffer_size);
+
+/**
  * Get a report signed by the enclave platform for use in attestation.
  *
  * This function creates a report to be used in local or remote attestation.

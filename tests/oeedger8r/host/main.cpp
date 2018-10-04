@@ -4,13 +4,7 @@
 #include <openenclave/host.h>
 #include <openenclave/internal/tests.h>
 #include <wchar.h>
-#include "array_u.h"
-#include "basic_u.h"
-#include "enum_u.h"
-#include "foreign_u.h"
-#include "pointer_u.h"
-#include "string_u.h"
-#include "struct_u.h"
+#include "all_u.h"
 
 void test_basic_edl_ecalls(oe_enclave_t* enclave);
 void test_string_edl_ecalls(oe_enclave_t* enclave);

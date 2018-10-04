@@ -256,6 +256,30 @@ let emit_composite_type (os:out_channel) = function
 | Ast.UnionDef u -> emit_struct_or_union os u true
 | Ast.EnumDef e -> emit_enum os e
   
+(*
+ * Get function id for a given function.
+ *)
+let get_function_id (f:Ast.func_decl) =
+  sprintf "fcn_id_%s" f.fname
+
+(*
+ * Emit function ids.
+ *)
+let emit_function_ids (os:out_channel) (ec: enclave_content) = 
+  fprintf os "\n/* trusted function ids */\n";
+  fprintf os "enum {\n";
+  List.iteri (fun idx f ->
+    fprintf os "    %s = %d,\n" (get_function_id f.Ast.tf_fdecl) idx
+  ) ec.tfunc_decls;
+  fprintf os "    trusted_call_id_max = OE_ENUM_MAX\n";
+  fprintf os "};\n\n";
+  fprintf os "\n/* untrusted function ids */\n";
+  fprintf os "enum {\n";
+  List.iteri (fun idx f ->
+    fprintf os "    %s = %d,\n" (get_function_id f.Ast.uf_fdecl) idx
+  ) ec.ufunc_decls;
+  fprintf os "    fcn_id_untrusted_call_max = OE_ENUM_MAX\n";
+  fprintf os "};\n\n"
 
 (* oe: Generate args.h which contains structs for ecalls and ocalls *)
 let oe_gen_args_header (ec: enclave_content) (dir:string)=  
@@ -279,6 +303,7 @@ let oe_gen_args_header (ec: enclave_content) (dir:string)=
     List.iter (emit_composite_type os) ec.comp_defs;
     if ec.comp_defs <> [] then fprintf os "\n";
     fprintf os "%s" (String.concat "\n" structs);
+    emit_function_ids os ec; 
     fprintf os "\n#endif // %s\n" guard_macro;
     close_out os
   
@@ -470,7 +495,21 @@ let oe_gen_ecall_functions (os:out_channel) (ec: enclave_content)  =
     (fun f -> oe_gen_ecall_function os f.Ast.tf_fdecl)
     ec.tfunc_decls
 
-
+let oe_gen_ecall_table (os:out_channel) (ec: enclave_content)  =
+  fprintf os "\n\n/****** ECALL function table  *************/\n";
+  fprintf os "oe_enclave_func_t _oe_ecall_function_table[] = {\n";
+  List.iter 
+    (fun f -> fprintf os "    (oe_enclave_func_t) ecall_%s,\n" f.Ast.tf_fdecl.fname)
+    ec.tfunc_decls;
+  fprintf os "};\n";
+  fprintf os "extern oe_enclave_func_t* _enclave_function_table;\n";  
+  fprintf os "extern size_t _enclave_function_table_size;\n";
+  fprintf os "__attribute__((constructor)) void __oe_init_ecall_table()\n";
+  fprintf os "{\n";
+  fprintf os "    _enclave_function_table = _oe_ecall_function_table;\n";
+  fprintf os "    _enclave_function_table_size = sizeof(_oe_ecall_function_table)/sizeof(_oe_ecall_function_table[0]);\n";
+  fprintf os "}\n\n"
+  
 let gen_fill_marshal_struct (os:out_channel) (fd:Ast.func_decl)  (args:string) =
   (* Generate assignment argument to corresponding field in args *)
   List.iter (fun (ptype, decl)->

@@ -72,6 +72,7 @@ typedef enum _oe_func {
     OE_ECALL_DESTRUCTOR = OE_ECALL_BASE,
     OE_ECALL_INIT_ENCLAVE,
     OE_ECALL_CALL_ENCLAVE,
+    OE_ECALL_CALL_ENCLAVE_FUNCTION,
     OE_ECALL_VERIFY_REPORT,
     OE_ECALL_GET_SGX_REPORT,
     OE_ECALL_VIRTUAL_EXCEPTION_HANDLER,
@@ -198,6 +199,24 @@ typedef struct _oe_call_enclave_args
     void* args;
     oe_result_t result;
 } oe_call_enclave_args_t;
+
+/*
+**==============================================================================
+**
+** oe_call_enclave_function_args_t
+**
+**==============================================================================
+*/
+
+typedef struct _oe_call_enclave_function_args
+{
+    uint64_t function_id;
+    void* input_buffer;
+    size_t input_buffer_size;
+    void* output_buffer;
+    size_t output_buffer_size;
+    oe_result_t result;
+} oe_call_enclave_function_args_t;
 
 /*
 **==============================================================================
