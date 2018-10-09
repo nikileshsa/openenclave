@@ -88,6 +88,8 @@ OE_STATIC_ASSERT(OE_OFFSETOF(ThreadBinding, tcs) == ThreadBinding_tcs);
 /* Get thread data from thread-specific data (TSD) */
 ThreadBinding* GetThreadBinding(void);
 
+typedef void (*oe_ocall_func_t)(void*);
+
 struct _oe_enclave
 {
     /* A "magic number" to validate structure */
@@ -116,6 +118,10 @@ struct _oe_enclave
     /* Array of ECALL entry points */
     ECallNameAddr* ecalls;
     size_t num_ecalls;
+
+    /* Array of ocall functions */
+    oe_ocall_func_t* ocalls;
+    size_t num_ocalls;
 
     /* Debug mode */
     bool debug;

@@ -623,6 +623,60 @@ done:
 /*
 **==============================================================================
 **
+** oe_call_host_function()
+**
+**==============================================================================
+*/
+
+oe_result_t oe_call_host_function(
+    size_t function_id,
+    void* input_buffer,
+    size_t input_buffer_size,
+    void* output_buffer,
+    size_t output_buffer_size)
+{
+    oe_result_t result = OE_UNEXPECTED;
+    oe_call_host_function_args_t* args = NULL;
+
+    /* Reject invalid parameters */
+    if (!input_buffer || input_buffer_size == 0)
+        OE_RAISE(OE_INVALID_PARAMETER);
+
+    /* Initialize the arguments */
+    {
+        if (!(args = oe_host_alloc_for_call_host(sizeof(*args))))
+        {
+            /* Fail if the enclave is crashing. */
+            OE_CHECK(__oe_enclave_status);
+            OE_RAISE(OE_OUT_OF_MEMORY);
+        }
+
+        args->function_id = function_id;
+        args->input_buffer = input_buffer;
+        args->input_buffer_size = input_buffer_size;
+        args->output_buffer = output_buffer;
+        args->output_buffer_size = output_buffer_size;
+        args->result = OE_UNEXPECTED;
+    }
+
+    /* Call the host function with this address */
+    OE_CHECK(oe_ocall(OE_OCALL_CALL_HOST_FUNCTION, (int64_t)args, NULL));
+
+    /* Check the result */
+    OE_CHECK(args->result);
+
+    result = OE_OK;
+
+done:
+
+    oe_host_free_for_call_host(args);
+
+    return result;
+}
+
+/*
+**==============================================================================
+**
 ** __oe_handle_main()
 **
 **     This function is called by oe_enter(), which is called by the EENTER

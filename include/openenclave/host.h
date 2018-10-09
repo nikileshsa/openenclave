@@ -88,6 +88,8 @@ oe_result_t oe_create_enclave(
     uint32_t flags,
     const void* config,
     uint32_t config_size,
+    void* ocall_table,
+    uint32_t ocall_table_size,
     oe_enclave_t** enclave);
 
 /**

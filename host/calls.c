@@ -332,6 +332,52 @@ done:
 /*
 **==============================================================================
 **
+** _handle_call_host_function()
+**
+**     Handle calls from the enclave
+**
+**==============================================================================
+*/
+
+static void _handle_call_host_function(uint64_t arg, oe_enclave_t* enclave)
+{
+    oe_result_t result = OE_UNEXPECTED;
+    oe_call_host_function_args_t* args = (oe_call_host_function_args_t*)arg;
+    oe_ocall_func_t func = NULL;
+
+    if (!args)
+    {
+        result = OE_INVALID_PARAMETER;
+        goto done;
+    }
+
+    if (args->function_id >= enclave->num_ocalls)
+    {
+        result = OE_NOT_FOUND;
+        goto done;
+    }
+
+    func = enclave->ocalls[args->function_id];
+    if (func == NULL)
+    {
+        result = OE_NOT_FOUND;
+        goto done;
+    }
+
+    /* Invoke the function */
+    func(args->input_buffer);
+
+    result = OE_OK;
+
+done:
+
+    if (args)
+        args->result = result;
+}
+
+/*
+**==============================================================================
+**
 ** _handle_ocall()
 **
 **     Handle calls from the enclave (OCALL)
@@ -362,6 +408,10 @@ static oe_result_t _handle_ocall(
 
         case OE_OCALL_CALL_HOST_BY_ADDRESS:
             _handle_call_host_by_address(arg_in, enclave);
+            break;
+
+        case OE_OCALL_CALL_HOST_FUNCTION:
+            _handle_call_host_function(arg_in, enclave);
             break;
 
         case OE_OCALL_MALLOC:

@@ -79,6 +79,7 @@ typedef enum _oe_func {
     /* Caution: always add new ECALL function numbers here */
 
     OE_OCALL_CALL_HOST = OE_OCALL_BASE,
+    OE_OCALL_CALL_HOST_FUNCTION,
     OE_OCALL_CALL_HOST_BY_ADDRESS,
     OE_OCALL_GET_QE_TARGET_INFO,
     OE_OCALL_GET_QUOTE,
@@ -217,6 +218,31 @@ typedef struct _oe_call_enclave_function_args
     size_t output_buffer_size;
     oe_result_t result;
 } oe_call_enclave_function_args_t;
+
+/*
+**==============================================================================
+**
+** oe_call_enclave_function_args_t
+**
+**==============================================================================
+*/
+
+typedef struct _oe_call_host_function_args
+{
+    uint64_t function_id;
+    void* input_buffer;
+    size_t input_buffer_size;
+    void* output_buffer;
+    size_t output_buffer_size;
+    oe_result_t result;
+} oe_call_host_function_args_t;
+
+/**
+**==============================================================================
+** oe_ocall_func_t
+**==============================================================================
+**/
+typedef void (*oe_ocall_func_t)(void*);
 
 /*
 **==============================================================================
