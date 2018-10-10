@@ -5,6 +5,7 @@
 #define _OE_HOST_ENCLAVE_H
 
 #include <openenclave/bits/properties.h>
+#include <openenclave/edger8r/host.h>
 #include <openenclave/host.h>
 #include <openenclave/internal/sgxtypes.h>
 #include <stdbool.h>
@@ -87,8 +88,6 @@ OE_STATIC_ASSERT(OE_OFFSETOF(ThreadBinding, tcs) == ThreadBinding_tcs);
 
 /* Get thread data from thread-specific data (TSD) */
 ThreadBinding* GetThreadBinding(void);
-
-typedef void (*oe_ocall_func_t)(void*);
 
 struct _oe_enclave
 {

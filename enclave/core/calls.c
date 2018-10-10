@@ -247,7 +247,7 @@ done:
     return result;
 }
 
-extern const oe_enclave_func_t _oe_ecalls_table[];
+extern const oe_ecall_func_t _oe_ecalls_table[];
 extern const size_t _oe_ecalls_table_size;
 
 static oe_result_t _handle_call_enclave_function(uint64_t arg_in)
@@ -269,13 +269,11 @@ static oe_result_t _handle_call_enclave_function(uint64_t arg_in)
     f = _oe_ecalls_table[args.function_id];
 
     if (f == NULL)
-        OE_RAISE(OE_UNEXPECTED);
+        OE_RAISE(OE_NOT_FOUND);
 
     f(args.input_buffer);
 
-    // Should we do this?
     args_ptr->result = OE_OK;
-
 done:
     return result;
 }

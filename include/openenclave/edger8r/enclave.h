@@ -26,19 +26,19 @@ OE_EXTERNC_BEGIN
 /**
  * The type of a function in ecall function table
  */
-typedef void (*oe_enclave_func_t)(void*);
+typedef void (*oe_ecall_func_t)(void*);
 
 /**
  * Perform a high-level host function call (OCALL).
  *
  * Call the host function whose matching the given function_id.
- * The host function is expected to have the following signature.
+ * The host function is expected to have the following signature:
  *
  *     void (*)(void* args);
  *
  * Note that the return value of this function only indicates the success of
  * the call and not of the underlying function. The OCALL implementation must
- * define its own error reporting scheme based on **args**.
+ * define its own error reporting scheme via the arguments or return value.
  *
  * @param function_id The id of the host function that will be called.
  * @param input_buffer Buffer containing inputs data.
@@ -49,6 +49,7 @@ typedef void (*oe_enclave_func_t)(void*);
  * @param output_bytes_written Number of bytes written in the output buffer.
  *
  * @return OE_OK the call was successful.
+ * @return OE_NOT_FOUND if the function_id does not correspond to a function.
  * @return OE_INVALID_PARAMETER a parameter is invalid.
  * @return OE_FAILURE the call failed.
  * @return OE_BUFFER_TOO_SMALL the input or output buffer was smaller than
@@ -63,11 +64,47 @@ oe_result_t oe_call_host_function(
     size_t* output_bytes_written);
 
 /**
+ * Check whether the given buffer is strictly within the enclave.
+ *
+ * Check whether the buffer given by the **ptr** and **size** parameters is
+ * strictly within the enclave's memory. If so, return true. If any
+ * portion of the buffer lies outside the enclave's memory, return false.
+ *
+ * @param ptr The pointer pointer to buffer.
+ * @param size The size of buffer
+ *
+ * @retval true The buffer is strictly within the enclave.
+ * @retval false At least some part of the buffer is outside the enclave, or
+ * the arguments are invalid. For example, if **ptr** is null or **size**
+ * causes arithmetic operations to wrap.
+ *
+ */
+bool oe_is_within_enclave(const void* ptr, size_t size);
+
+/**
+ * Check whether the given buffer is strictly outside the enclave.
+ *
+ * Check whether the buffer given by the **ptr** and **size** parameters is
+ * strictly outside the enclave's memory. If so, return true. If any
+ * portion of the buffer lies within the enclave's memory, return false.
+ *
+ * @param ptr The pointer to buffer.
+ * @param size The size of buffer.
+ *
+ * @retval true The buffer is strictly outside the enclave.
+ * @retval false At least some part of the buffer is inside the enclave, or
+ * the arguments are invalid. For example, if **ptr** is null or **size**
+ * causes arithmetic operations to wrap.
+ *
+ */
+bool oe_is_outside_enclave(const void* ptr, size_t size);
+
+/**
  * For hand-written enclaves, that use the older calling mechanism, define empty
  * ecall tables.
  */
-#define OE_DEFINE_EMPTY_ECALL_TABLE()                              \
-    OE_EXPORT_CONST oe_enclave_func_t _oe_ecalls_table[] = {NULL}; \
+#define OE_DEFINE_EMPTY_ECALL_TABLE()                            \
+    OE_EXPORT_CONST oe_ecall_func_t _oe_ecalls_table[] = {NULL}; \
     OE_EXPORT_CONST size_t _oe_ecalls_table_size = 0
 
 OE_EXTERNC_END

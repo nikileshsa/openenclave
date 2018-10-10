@@ -497,9 +497,9 @@ let oe_gen_ecall_functions (os:out_channel) (ec: enclave_content)  =
 
 let oe_gen_ecall_table (os:out_channel) (ec: enclave_content)  =
   fprintf os "\n\n/****** ECALL function table  *************/\n";
-  fprintf os "oe_enclave_func_t _oe_ecalls_table[] = {\n";
+  fprintf os "oe_ecall_func_t _oe_ecalls_table[] = {\n";
   List.iter 
-    (fun f -> fprintf os "    (oe_enclave_func_t) ecall_%s,\n" f.Ast.tf_fdecl.fname)
+    (fun f -> fprintf os "    (oe_ecall_func_t) ecall_%s,\n" f.Ast.tf_fdecl.fname)
     ec.tfunc_decls;
   fprintf os "};\n\n";
   fprintf os "size_t _oe_ecalls_table_size = OE_COUNTOF(_oe_ecalls_table);\n\n"  
@@ -530,7 +530,7 @@ let oe_get_host_ecall_function (os:out_channel) (fd:Ast.func_decl) =
   fprintf os "    memset(&__args, 0, sizeof(__args));\n";
   gen_fill_marshal_struct os fd "__args";
   fprintf os "    /* Call enclave function */\n";
-  fprintf os "    if(oe_call_enclave_function(enclave,%s, &__args, sizeof(__args), NULL, 0) != OE_OK || (__result=__args._result) != OE_OK)\n" (get_function_id fd);
+  fprintf os "    if(oe_call_enclave_function(enclave,%s, &__args, sizeof(__args), NULL, 0, NULL) != OE_OK || (__result=__args._result) != OE_OK)\n" (get_function_id fd);
   fprintf os "        goto done;\n\n";
   fprintf os "    /* successful ecall. */\n";
   if fd.Ast.rtype <> Ast.Void then 
@@ -640,10 +640,9 @@ let oe_gen_ocall_enclave_wrapper (os:out_channel) (fd:Ast.func_decl) =
  *)  
 let oe_gen_ocall_table (os:out_channel) (ec:enclave_content) =
   fprintf os "\n/*ocall function table*/\n";
-  fprintf os "\ntypedef void (*ocall_function_t)(void*);\n";
-  fprintf os "static ocall_function_t _%s_ocall_function_table[]= {\n" ec.enclave_name;
+  fprintf os "static oe_ocall_func_t _%s_ocall_function_table[]= {\n" ec.enclave_name;
   List.iter (fun fd ->
-    fprintf os "    (ocall_function_t) ocall_%s,\n" fd.Ast.uf_fdecl.fname
+    fprintf os "    (oe_ocall_func_t) ocall_%s,\n" fd.Ast.uf_fdecl.fname
   )  ec.ufunc_decls;
   fprintf os "    NULL\n";
   fprintf os "};\n\n"
@@ -792,6 +791,7 @@ let gen_u_c (ec: enclave_content) (ep: edger8r_params) =
   let ecalls_fname = ec.file_shortnm ^ "_u.c" in
   let os = open_file ecalls_fname ep.untrusted_dir in
   fprintf os "#include \"%s_u.h\"\n" ec.file_shortnm;  
+  fprintf os "#include <openenclave/edger8r/host.h>\n";  
   fprintf os "#include <stdlib.h>\n";
   fprintf os "#include <string.h>\n";
   fprintf os "#include <wchar.h>\n";  
