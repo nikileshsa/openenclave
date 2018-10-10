@@ -825,7 +825,7 @@ oe_result_t oe_call_enclave_function(
 
     /* Reject invalid parameters */
     if (!enclave)
-        OE_THROW(OE_INVALID_PARAMETER);
+        OE_RAISE(OE_INVALID_PARAMETER);
 
     /* Initialize the call_enclave_args structure */
     {
@@ -841,21 +841,21 @@ oe_result_t oe_call_enclave_function(
     {
         uint64_t arg_out = 0;
 
-        OE_TRY(
+        OE_CHECK(
             oe_ecall(
                 enclave,
                 OE_ECALL_CALL_ENCLAVE_FUNCTION,
                 (uint64_t)&args,
                 &arg_out));
-        OE_TRY(arg_out);
+        OE_CHECK(arg_out);
     }
 
     /* Check the result */
-    OE_TRY(args.result);
+    OE_CHECK(args.result);
 
     result = OE_OK;
 
-OE_CATCH:
+done:
     return result;
 }
 

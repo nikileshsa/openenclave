@@ -497,19 +497,12 @@ let oe_gen_ecall_functions (os:out_channel) (ec: enclave_content)  =
 
 let oe_gen_ecall_table (os:out_channel) (ec: enclave_content)  =
   fprintf os "\n\n/****** ECALL function table  *************/\n";
-  fprintf os "typedef void (*oe_enclave_func_t)(void*);\n\n";
-  fprintf os "oe_enclave_func_t _oe_ecall_function_table[] = {\n";
+  fprintf os "oe_enclave_func_t _oe_ecalls_table[] = {\n";
   List.iter 
     (fun f -> fprintf os "    (oe_enclave_func_t) ecall_%s,\n" f.Ast.tf_fdecl.fname)
     ec.tfunc_decls;
   fprintf os "};\n\n";
-  fprintf os "extern oe_enclave_func_t* _enclave_function_table;\n";  
-  fprintf os "extern size_t _enclave_function_table_size;\n\n";
-  fprintf os "__attribute__((constructor)) void __oe_init_ecall_table()\n";
-  fprintf os "{\n";
-  fprintf os "    _enclave_function_table = _oe_ecall_function_table;\n";
-  fprintf os "    _enclave_function_table_size = sizeof(_oe_ecall_function_table)/sizeof(_oe_ecall_function_table[0]);\n";
-  fprintf os "}\n\n"
+  fprintf os "size_t _oe_ecalls_table_size = OE_COUNTOF(_oe_ecalls_table);\n\n"  
   
 let gen_fill_marshal_struct (os:out_channel) (fd:Ast.func_decl)  (args:string) =
   (* Generate assignment argument to corresponding field in args *)
@@ -618,7 +611,7 @@ let oe_gen_ocall_enclave_wrapper (os:out_channel) (fd:Ast.func_decl) =
 
  (* Generate call to host *)
   fprintf os "\n    /* Call host function */\n";
-  fprintf os "    if(oe_call_host_function(%s, __p_host_args, sizeof(*__p_host_args), NULL, 0) != OE_OK)\n" (get_function_id fd);
+  fprintf os "    if(oe_call_host_function(%s, __p_host_args, sizeof(*__p_host_args), NULL, 0, NULL) != OE_OK)\n" (get_function_id fd);
   fprintf os "        goto done;\n\n";
   fprintf os "    /* Copy args struct back to enclave memory to prevent TOCTOU issues. */ \n";
   fprintf os "    __host_args = *(%s_args_t*) __p_host_args; \n" fd.Ast.fname;
@@ -734,6 +727,7 @@ let gen_t_c (ec: enclave_content) (ep: edger8r_params) =
   let ecalls_fname = ec.file_shortnm ^ "_t.c" in
   let os = open_file ecalls_fname ep.trusted_dir in
   fprintf os "#include \"%s_t.h\"\n" ec.file_shortnm;  
+  fprintf os "#include <openenclave/edger8r/enclave.h>\n";  
   fprintf os "#include <stdlib.h>\n";
   fprintf os "#include <string.h>\n";
   fprintf os "#include <wchar.h>\n";  

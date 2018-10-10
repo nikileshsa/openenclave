@@ -3,6 +3,7 @@
 
 #include <openenclave/bits/safecrt.h>
 #include <openenclave/bits/safemath.h>
+#include <openenclave/edger8r/enclave.h>
 #include <openenclave/enclave.h>
 #include <openenclave/internal/atexit.h>
 #include <openenclave/internal/calls.h>
@@ -246,8 +247,8 @@ done:
     return result;
 }
 
-oe_enclave_func_t* _enclave_function_table = NULL;
-size_t _enclave_function_table_size = 0;
+extern const oe_enclave_func_t _oe_ecalls_table[];
+extern const size_t _oe_ecalls_table_size;
 
 static oe_result_t _handle_call_enclave_function(uint64_t arg_in)
 {
@@ -262,10 +263,10 @@ static oe_result_t _handle_call_enclave_function(uint64_t arg_in)
     args_ptr = (oe_call_enclave_function_args_t*)arg_in;
     args = *args_ptr;
 
-    if (args.function_id >= _enclave_function_table_size)
+    if (args.function_id >= _oe_ecalls_table_size)
         OE_RAISE(OE_NOT_FOUND);
 
-    f = _enclave_function_table[args.function_id];
+    f = _oe_ecalls_table[args.function_id];
 
     if (f == NULL)
         OE_RAISE(OE_UNEXPECTED);
@@ -633,7 +634,8 @@ oe_result_t oe_call_host_function(
     void* input_buffer,
     size_t input_buffer_size,
     void* output_buffer,
-    size_t output_buffer_size)
+    size_t output_buffer_size,
+    size_t* output_bytes_written)
 {
     oe_result_t result = OE_UNEXPECTED;
     oe_call_host_function_args_t* args = NULL;
