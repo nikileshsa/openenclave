@@ -334,7 +334,7 @@ done:
 **
 ** _handle_call_host_function()
 **
-**     Handle calls from the enclave
+** Handle calls from the enclave.
 **
 **==============================================================================
 */
@@ -351,6 +351,7 @@ static void _handle_call_host_function(uint64_t arg, oe_enclave_t* enclave)
         goto done;
     }
 
+    // Fetch matching function.
     if (args->function_id >= enclave->num_ocalls)
     {
         result = OE_NOT_FOUND;
@@ -805,9 +806,11 @@ done:
 /*
 **==============================================================================
 **
-** oe_call_enclave()
+** oe_call_enclave_function()
 **
-**     Call the named function in the enclave.
+** Call the enclave function specified by the given function-id.
+** Note: Currently only SGX style marshaling is supported. input_buffer contains
+** the marshaling args structure.
 **
 **==============================================================================
 */
