@@ -1416,7 +1416,7 @@ oe_result_t oe_create_enclave(
     uint32_t flags,
     const void* config,
     uint32_t config_size,
-    void* ocall_table,
+    void (**ocall_table)(void*),
     uint32_t ocall_table_size,
     oe_enclave_t** enclave_out)
 {
@@ -1500,8 +1500,6 @@ done:
 
         free(enclave->ecalls);
         free(enclave);
-        enclave->ocalls = NULL;
-        enclave->num_ocalls = 0;
     }
 
     oe_sgx_cleanup_load_context(&context);

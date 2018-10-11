@@ -64,42 +64,6 @@ oe_result_t oe_call_host_function(
     size_t* output_bytes_written);
 
 /**
- * Check whether the given buffer is strictly within the enclave.
- *
- * Check whether the buffer given by the **ptr** and **size** parameters is
- * strictly within the enclave's memory. If so, return true. If any
- * portion of the buffer lies outside the enclave's memory, return false.
- *
- * @param ptr The pointer pointer to buffer.
- * @param size The size of buffer
- *
- * @retval true The buffer is strictly within the enclave.
- * @retval false At least some part of the buffer is outside the enclave, or
- * the arguments are invalid. For example, if **ptr** is null or **size**
- * causes arithmetic operations to wrap.
- *
- */
-bool oe_is_within_enclave(const void* ptr, size_t size);
-
-/**
- * Check whether the given buffer is strictly outside the enclave.
- *
- * Check whether the buffer given by the **ptr** and **size** parameters is
- * strictly outside the enclave's memory. If so, return true. If any
- * portion of the buffer lies within the enclave's memory, return false.
- *
- * @param ptr The pointer to buffer.
- * @param size The size of buffer.
- *
- * @retval true The buffer is strictly outside the enclave.
- * @retval false At least some part of the buffer is inside the enclave, or
- * the arguments are invalid. For example, if **ptr** is null or **size**
- * causes arithmetic operations to wrap.
- *
- */
-bool oe_is_outside_enclave(const void* ptr, size_t size);
-
-/**
  * For hand-written enclaves, that use the older calling mechanism, define empty
  * ecall tables.
  */
